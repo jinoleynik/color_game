@@ -20,6 +20,7 @@ highscoreEl.innerText = highscore;
 let hoveredSquare = null;
 let mouseDown = false;
 let hoveredNeighbors = [];
+let isAnimatingDisappear = false;
 
 function getRandomColor() {
     return COLORS[Math.floor(Math.random() * COLORS.length)];
@@ -35,7 +36,7 @@ function initGrid() {
     for (let y = 0; y < rows; y++) {
         grid[y] = [];
         for (let x = 0; x < cols; x++) {
-            grid[y][x] = { color: getRandomColor(), animation: 0 };
+            grid[y][x] = { color: getRandomColor(), animation: 0, disappearing: false };
         }
     }
     score = 0;
@@ -44,42 +45,23 @@ function initGrid() {
 
 function drawGrid() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    let squaresToDrawNormally = [];
-    let squaresToDrawOnTop = [];
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
             if (grid[y][x]) {
                 const square = grid[y][x];
-                if (square.animation > 0) {
-                    squaresToDrawOnTop.push({ square, x, y });
-                } else {
-                    squaresToDrawNormally.push({ square, x, y });
+                let size = SQUARE_SIZE + square.animation * 20;
+                if (square.disappearing) {
+                    size = Math.max(0, size);
                 }
+                const offset = (SQUARE_SIZE - size) / 2;
+                ctx.fillStyle = square.color;
+                ctx.fillRect(x * SQUARE_SIZE + offset, y * SQUARE_SIZE + offset, size, size);
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x * SQUARE_SIZE + offset, y * SQUARE_SIZE + offset, size, size);
             }
         }
-    }
-
-    for (const item of squaresToDrawNormally) {
-        const { square, x, y } = item;
-        const size = SQUARE_SIZE + square.animation * 20;
-        const offset = (SQUARE_SIZE - size) / 2;
-        ctx.fillStyle = square.color;
-        ctx.fillRect(x * SQUARE_SIZE + offset, y * SQUARE_SIZE + offset, size, size);
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x * SQUARE_SIZE + offset, y * SQUARE_SIZE + offset, size, size);
-    }
-
-    for (const item of squaresToDrawOnTop) {
-        const { square, x, y } = item;
-        const size = SQUARE_SIZE + square.animation * 20;
-        const offset = (SQUARE_SIZE - size) / 2;
-        ctx.fillStyle = square.color;
-        ctx.fillRect(x * SQUARE_SIZE + offset, y * SQUARE_SIZE + offset, size, size);
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x * SQUARE_SIZE + offset, y * SQUARE_SIZE + offset, size, size);
     }
 }
 
@@ -114,6 +96,7 @@ function findNeighbors(x, y, color) {
 }
 
 function handleClick(event) {
+    if (isAnimatingDisappear) return;
     const x = Math.floor(event.clientX / SQUARE_SIZE);
     const y = Math.floor((event.clientY - 50) / SQUARE_SIZE);
 
@@ -126,7 +109,7 @@ function handleClick(event) {
 
     if (neighbors.length >= 2) {
         for (const n of neighbors) {
-            grid[n.y][n.x] = null;
+            grid[n.y][n.x].disappearing = true;
         }
         score += Math.pow(2, neighbors.length);
         scoreEl.innerText = score;
@@ -135,9 +118,7 @@ function handleClick(event) {
             highscoreEl.innerText = highscore;
             localStorage.setItem('highscore', highscore);
         }
-        applyGravity();
-        fillEmptySpaces();
-        drawGrid();
+        animateDisappear();
     }
 }
 
@@ -187,7 +168,7 @@ function animate() {
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
             const square = grid[y][x];
-            if (square) {
+            if (square && !square.disappearing) {
                 let targetAnimation = 0;
                 if (mouseDown) {
                     if (hoveredNeighbors.length > 0) {
@@ -216,6 +197,53 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
+function animateDisappear() {
+    isAnimatingDisappear = true;
+    const disappearingSquares = [];
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            if (grid[y][x] && grid[y][x].disappearing) {
+                disappearingSquares.push(grid[y][x]);
+            }
+        }
+    }
+
+    const duration = 300; // ms
+    let startTime = null;
+
+    function animateStep(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const progress = timestamp - startTime;
+        const animationValue = progress / duration;
+
+        for (const square of disappearingSquares) {
+            square.animation = -animationValue * 5;
+        }
+
+        drawGrid();
+
+        if (progress < duration) {
+            requestAnimationFrame(animateStep);
+        } else {
+            for (const square of disappearingSquares) {
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < cols; x++) {
+                        if (grid[y][x] === square) {
+                            grid[y][x] = null;
+                        }
+                    }
+                }
+            }
+            applyGravity();
+            fillEmptySpaces();
+            drawGrid();
+            isAnimatingDisappear = false;
+        }
+    }
+
+    requestAnimationFrame(animateStep);
+}
+
 function applyGravity() {
     for (let x = 0; x < cols; x++) {
         let emptyRow = rows - 1;
@@ -232,7 +260,7 @@ function fillEmptySpaces() {
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
             if (!grid[y][x]) {
-                grid[y][x] = { color: getRandomColor(), animation: 0 };
+                grid[y][x] = { color: getRandomColor(), animation: 0, disappearing: false };
             }
         }
     }
