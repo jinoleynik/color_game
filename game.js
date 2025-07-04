@@ -26,7 +26,23 @@ let mouseDown = false;
 let hoveredNeighbors = [];
 let isAnimatingDisappear = false;
 
-function getRandomColor() {
+let removedTilesCount = 0;
+
+function getRandomColor(x, y) {
+    const matchProbability = Math.max(0, 0.5 - (Math.floor(removedTilesCount / 100) * 0.01));
+    const neighbors = [];
+    // Check left neighbor
+    if (x > 0 && grid[y][x - 1]) {
+        neighbors.push(grid[y][x - 1].color);
+    }
+    // Check top neighbor
+    if (y > 0 && grid[y - 1][x]) {
+        neighbors.push(grid[y - 1][x].color);
+    }
+
+    if (neighbors.length > 0 && Math.random() < matchProbability) {
+        return neighbors[Math.floor(Math.random() * neighbors.length)];
+    }
     return COLORS[Math.floor(Math.random() * COLORS.length)];
 }
 
@@ -40,11 +56,12 @@ function initGrid() {
     for (let y = 0; y < rows; y++) {
         grid[y] = [];
         for (let x = 0; x < cols; x++) {
-            grid[y][x] = { color: getRandomColor(), animation: 0, disappearing: false };
+            grid[y][x] = { color: getRandomColor(x, y), animation: 0, disappearing: false };
         }
     }
     score = 0;
     scoreEl.innerText = score;
+    removedTilesCount = 0;
 }
 
 function drawGrid() {
@@ -130,6 +147,7 @@ function handleClick(event) {
     const neighbors = findNeighbors(x, y, color);
 
     if (neighbors.length >= 2) {
+        removedTilesCount += neighbors.length;
         for (const n of neighbors) {
             grid[n.y][n.x].disappearing = true;
         }
@@ -282,7 +300,7 @@ function fillEmptySpaces() {
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
             if (!grid[y][x]) {
-                grid[y][x] = { color: getRandomColor(), animation: 0, disappearing: false };
+                grid[y][x] = { color: getRandomColor(x, y), animation: 0, disappearing: false };
             }
         }
     }
@@ -300,7 +318,7 @@ paletteSelect.addEventListener('change', (event) => {
                 if (oldColorIndex !== -1 && oldColorIndex < COLORS.length) {
                     square.color = COLORS[oldColorIndex];
                 } else {
-                    square.color = getRandomColor();
+                    square.color = getRandomColor(x, y);
                 }
             }
         }
