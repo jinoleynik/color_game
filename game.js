@@ -8,7 +8,10 @@ const SQUARE_SIZE = 50;
 const PALETTES = {
     '0': ['#03071e', '#370617', '#6a040f', '#9d0208', '#d00000', '#dc2f02', '#e85d04', '#f48c06', '#faa307', '#ffba08'],
     '1': ['#FFB6C1', '#98FB98', '#ADD8E6', '#FFFFE0', '#E6E6FA', '#AFEEEE', '#FFDAB9', '#DDA0DD', '#B2DFDB', '#FFC0CB'],
-    '2': ['#001219', '#005F73', '#0A9396', '#94D2BD', '#E9D8A6', '#EE9B00', '#CA6702', '#BB3E03', '#AE2012', '#9B2226']
+    '2': ['#001219', '#005F73', '#0A9396', '#94D2BD', '#E9D8A6', '#EE9B00', '#CA6702', '#BB3E03', '#AE2012', '#9B2226'],
+    '3': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+    '4': ['#FFFFFF', '#E0E0E0', '#C2C2C2', '#A3A3A3', '#858585', '#666666', '#474747', '#292929', '#0A0A0A', '#000000'],
+    '5': ['#FFFF00', '#D4E600', '#AACC00', '#85B300', '#5F9900', '#3A8000', '#146600', '#004D00', '#003300', '#001A00']
 };
 let COLORS = PALETTES['0'];
 
@@ -45,6 +48,7 @@ function initGrid() {
 
 function drawGrid() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const isNumbersPalette = paletteSelect.value === '3';
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
@@ -55,11 +59,28 @@ function drawGrid() {
                     size = Math.max(0, size);
                 }
                 const offset = (SQUARE_SIZE - size) / 2;
-                ctx.fillStyle = square.color;
-                ctx.fillRect(x * SQUARE_SIZE + offset, y * SQUARE_SIZE + offset, size, size);
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = 1;
-                ctx.strokeRect(x * SQUARE_SIZE + offset, y * SQUARE_SIZE + offset, size, size);
+                const squareX = x * SQUARE_SIZE + offset;
+                const squareY = y * SQUARE_SIZE + offset;
+
+                if (isNumbersPalette) {
+                    ctx.fillStyle = '#CCCCCC';
+                    ctx.fillRect(squareX, squareY, size, size);
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(squareX, squareY, size, size);
+
+                    ctx.fillStyle = 'black';
+                    ctx.font = `${size * 0.6}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(square.color, squareX + size / 2, squareY + size / 2);
+                } else {
+                    ctx.fillStyle = square.color;
+                    ctx.fillRect(squareX, squareY, size, size);
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(squareX, squareY, size, size);
+                }
             }
         }
     }
