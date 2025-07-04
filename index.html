@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Color Game</title>
+    <link rel="stylesheet" type="text/css" href="./style.css">
+</head>
+<body>
+    <div id="top-menu">
+        <div id="score-container">Score: <span id="score">0</span></div>
+        <div id="highscore-container">High Score: <span id="highscore">0</span></div>
+        <div id="palette-container">
+            <label for="palette-select">Color Palette:</label>
+            <select id="palette-select">
+                <option value="0">Default</option>
+                <option value="1">Pastel</option>
+                <option value="2">Ocean</option>
+            </select>
+        </div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <script src="./game.js"></script>
+</body>
+</html>
