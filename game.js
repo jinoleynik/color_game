@@ -1,7 +1,10 @@
+const version = "1.0.1";
+
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const scoreEl = document.getElementById("score");
 const highscoreEl = document.getElementById("highscore");
+const maxRemovedEl = document.getElementById("max-removed");
 const paletteSelect = document.getElementById("palette-select");
 const softerContrastingHexColors = [
   "#E57373", // Muted Red (e.g., Light Coral)
@@ -94,12 +97,25 @@ const PALETTES = {
   7: softerContrastingHexColors,
 };
 let COLORS = PALETTES["0"];
+const savedPalette = localStorage.getItem("selectedPalette");
+if (savedPalette) {
+  paletteSelect.value = savedPalette;
+  COLORS = PALETTES[savedPalette];
+}
+
+const savedVersion = localStorage.getItem("version");
+if (savedVersion !== version) {
+  localStorage.removeItem("highscore");
+  localStorage.setItem("version", version);
+}
 
 let grid = [];
 let cols, rows;
 let score = 0;
 let highscore = localStorage.getItem("highscore") || 0;
 highscoreEl.innerText = highscore;
+let maxRemoved = localStorage.getItem("maxRemoved") || 0;
+maxRemovedEl.innerText = maxRemoved;
 let hoveredSquare = null;
 let mouseDown = false;
 let hoveredNeighbors = [];
@@ -243,12 +259,18 @@ function handleClick(event) {
   const neighbors = findNeighbors(x, y, color);
 
   if (neighbors.length >= 2) {
+    if (neighbors.length > maxRemoved) {
+      maxRemoved = neighbors.length;
+      maxRemovedEl.innerText = maxRemoved;
+      localStorage.setItem("maxRemoved", maxRemoved);
+    }
     removedTilesCount += neighbors.length;
     for (const n of neighbors) {
       grid[n.y][n.x].disappearing = true;
     }
     // score += Math.pow(2, neighbors.length);
-    score += 2 * (neighbors.length + 1);
+    // score += 2 * (neighbors.length + 1);
+    score +=  neighbors.length;
     scoreEl.innerText = score;
     if (score > highscore) {
       highscore = score;
@@ -408,8 +430,10 @@ function fillEmptySpaces() {
 }
 
 paletteSelect.addEventListener("change", (event) => {
+  const newPalette = event.target.value;
+  localStorage.setItem("selectedPalette", newPalette);
   const oldColors = COLORS;
-  COLORS = PALETTES[event.target.value];
+  COLORS = PALETTES[newPalette];
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const square = grid[y][x];
