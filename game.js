@@ -1,4 +1,4 @@
-const version = "1.0.1";
+const version = "1.0.3";
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -6,6 +6,9 @@ const scoreEl = document.getElementById("score");
 const highscoreEl = document.getElementById("highscore");
 const maxRemovedEl = document.getElementById("max-removed");
 const paletteSelect = document.getElementById("palette-select");
+const gameOverPopup = document.getElementById("game-over-popup");
+const finalScoreEl = document.getElementById("final-score");
+const newGameButton = document.getElementById("new-game-button");
 const softerContrastingHexColors = [
   "#E57373", // Muted Red (e.g., Light Coral)
   "#81C784", // Muted Green (e.g., Light Green)
@@ -356,6 +359,24 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
+function checkGameOver() {
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (grid[y][x]) {
+        const neighbors = findNeighbors(x, y, grid[y][x].color);
+        if (neighbors.length >= 2) {
+          return; // Found a move
+        }
+      }
+    }
+  }
+  console.log("Game Over");
+
+  // No moves found
+  finalScoreEl.innerText = score;
+  gameOverPopup.classList.remove("hidden");
+}
+
 function animateDisappear() {
   isAnimatingDisappear = true;
   const disappearingSquares = [];
@@ -397,6 +418,7 @@ function animateDisappear() {
       fillEmptySpaces();
       drawGrid();
       isAnimatingDisappear = false;
+      checkGameOver();
     }
   }
 
@@ -457,6 +479,12 @@ canvas.addEventListener("mouseup", handleMouseUp);
 canvas.addEventListener("mousemove", handleMouseMove);
 
 window.addEventListener("resize", () => {
+  initGrid();
+  drawGrid();
+});
+
+newGameButton.addEventListener("click", () => {
+  gameOverPopup.classList.add("hidden");
   initGrid();
   drawGrid();
 });
