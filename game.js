@@ -1,4 +1,34 @@
-const version = "1.0.3";
+const version = "1.0.5";
+
+function saveGameState() {
+  const gameState = {
+    grid: grid,
+    score: score,
+    cols: cols,
+    rows: rows,
+    removedTilesCount: removedTilesCount,
+  };
+  localStorage.setItem("gameState", JSON.stringify(gameState));
+}
+
+function loadGameState() {
+  const savedState = localStorage.getItem("gameState");
+  if (savedState) {
+    const gameState = JSON.parse(savedState);
+    grid = gameState.grid;
+    score = gameState.score;
+    cols = gameState.cols;
+    rows = gameState.rows;
+    removedTilesCount = gameState.removedTilesCount;
+
+    scoreEl.innerText = score;
+    canvas.width = cols * SQUARE_SIZE;
+    canvas.height = rows * SQUARE_SIZE;
+    canvas.style.marginTop = "50px";
+    return true;
+  }
+  return false;
+}
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -9,6 +39,7 @@ const paletteSelect = document.getElementById("palette-select");
 const gameOverPopup = document.getElementById("game-over-popup");
 const finalScoreEl = document.getElementById("final-score");
 const newGameButton = document.getElementById("new-game-button");
+const newGameTopButton = document.getElementById("new-game-top-button");
 const softerContrastingHexColors = [
   "#E57373", // Muted Red (e.g., Light Coral)
   "#81C784", // Muted Green (e.g., Light Green)
@@ -419,6 +450,7 @@ function animateDisappear() {
       drawGrid();
       isAnimatingDisappear = false;
       checkGameOver();
+      saveGameState();
     }
   }
 
@@ -478,6 +510,11 @@ canvas.addEventListener("mousedown", handleMouseDown);
 canvas.addEventListener("mouseup", handleMouseUp);
 canvas.addEventListener("mousemove", handleMouseMove);
 
+newGameTopButton.addEventListener("click", () => {
+  initGrid();
+  drawGrid();
+});
+
 window.addEventListener("resize", () => {
   initGrid();
   drawGrid();
@@ -489,6 +526,8 @@ newGameButton.addEventListener("click", () => {
   drawGrid();
 });
 
-initGrid();
+if (!loadGameState()) {
+  initGrid();
+}
 drawGrid();
 animate();
